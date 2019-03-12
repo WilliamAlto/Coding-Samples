@@ -1,0 +1,338 @@
+'VBA code taken 
+
+Sub HarvestDOT()
+'Harvest DOT Data
+'BAA 7/26/2016
+'BAA 8/31/2016 edited to cycle through interesting airports
+
+  Application.ScreenUpdating = False
+  
+  Dim j As Integer
+  Dim k As Integer
+  Dim retain As Long
+  Dim MainWkbk As Workbook
+  Dim NextWkbk As Workbook
+  Dim ActivePath_DOT As String
+  Dim Index_Min_DOT As Integer
+  Dim Index_Max_DOT As Integer
+
+  Set MainWkbk = ActiveWorkbook
+
+'Clear out data
+    Range("DataCorner_DOT").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.ClearContents
+
+'Set max
+    Index_Min_DOT = Range("Index_Min_DOT").Value
+    Index_Max_DOT = Range("Index_Max_DOT").Value
+    
+'Reset retain
+    retain = 0
+    
+'Pull data for given month
+  For j = Index_Min_DOT To Index_Max_DOT
+    Range("Index_DOT") = j
+    Calculate
+    
+    ActivePath_DOT = Range("ActivePath_DOT").Value
+    Workbooks.Open FileName:=ActivePath_DOT, Editable:=True
+    
+  Set NextWkbk = ActiveWorkbook
+     
+    MainWkbk.Activate
+     
+     retain = (j - Index_Min_DOT) * CLng(12 * 51)
+     
+      'cycle thru airports
+      For k = 1 To 51
+      Range("AirportNumber") = k
+      
+      Calculate
+    
+      Range("DataCorner_DOT").Offset(rowOffset:=retain, columnOffset:=0).Value = Range("ActiveCorner_DOT").Value
+                
+        retain = retain + 12
+                
+      Next k
+    
+    'cycle thru workbooks
+   NextWkbk.Close False
+   
+  Next j
+End Sub
+
+Sub HarvestDOTActive()
+'Harvest DOT Data for only the active airport
+'BAA 10/22/2017
+  Application.ScreenUpdating = False
+  
+  Dim j As Integer
+  Dim retain As Long
+  Dim MainWkbk As Workbook
+  Dim NextWkbk As Workbook
+  Dim ActivePath_DOT As String
+  Dim Index_Min_DOT As Integer
+  Dim Index_Max_DOT As Integer
+
+  Set MainWkbk = ActiveWorkbook
+
+'Clear out data
+    Range("DataCorner_DOT").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.ClearContents
+
+'Set max
+    Index_Min_DOT = Range("Index_Min_DOT").Value
+    Index_Max_DOT = Range("Index_Max_DOT").Value
+    
+'Reset retain
+    retain = 0
+    
+'Pull data for given month
+  For j = Index_Min_DOT To Index_Max_DOT
+    Range("Index_DOT") = j
+    Calculate
+    
+    ActivePath_DOT = Range("ActivePath_DOT").Value
+    Workbooks.Open FileName:=ActivePath_DOT, Editable:=True
+    
+  Set NextWkbk = ActiveWorkbook
+     
+    MainWkbk.Activate
+     
+     retain = (j - Index_Min_DOT) * CLng(12)
+          
+      Calculate
+    
+      Range("DataCorner_DOT").Offset(rowOffset:=retain, columnOffset:=0).Value = Range("ActiveCorner_DOT").Value
+                
+        retain = retain + 12
+    
+    'cycle thru workbooks
+   NextWkbk.Close False
+   
+  Next j
+End Sub
+
+Sub AirportCycle()
+'Cycle through airports and copy exhibit
+'BAA 9/8/2016
+
+  ScreenUpdating = False
+  Autocalculate = False
+
+  Dim i As Integer
+  Dim Airport As String
+          
+  ' delete exhibit sheets
+  For Each s In ActiveWorkbook.Sheets
+    If Left(s.Name, 8) = "Exhibits" Then
+        s.Delete
+    End If
+  Next s
+         
+  'cycle through airports and copy to create exhibit sheet for each airport
+  For i = 1 To 51
+    Range("AirportNumber") = i
+    
+    Calculate
+
+    Airport = Range("IATACode").Value
+    Worksheets("Air Traffic By Month").Copy After:=Sheets(Sheets.Count)
+    ActiveSheet.Name = "Exhibits " & Airport
+    
+    Range("A2:AJ1000").Activate
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+       
+    Next i
+
+End Sub
+
+
+Sub CycleForecasts()
+'Copy Forecast for a list of given airport at a given date
+'BAA 8/16/2017
+'BAA 10/4/2017
+
+  ScreenUpdating = False
+  Autocalculate = True
+
+  Dim i As Integer
+  Dim CatEvent As String
+          
+  ' delete exhibit sheets (turn off alerts so don't have to agree to a delete sheet)
+  Application.DisplayAlerts = False
+  For Each s In ActiveWorkbook.Sheets
+    If Left(s.Name, 5) = "Fcast" Then
+        s.Delete
+    End If
+  Next s
+  Application.DisplayAlerts = True
+          
+  'cycle through events and copy to create exhibit sheet for each airport
+  For i = 1 To 20
+    Range("CatEventNumber") = i
+    
+    Calculate
+    
+    Worksheets("Forecast").Activate
+    Range("ForecastAirport").Value = Range("CycleAirport").Value
+    Range("Forecast").Value = Range("Cycle").Value
+        
+    Calculate
+
+    CatEvent = Range("CatEvent").Value
+    Worksheets("Forecast").Copy After:=Sheets(Sheets.Count)
+    ActiveSheet.Name = "Fcast " & CatEvent
+            
+    Range("A1:BJ1000").Activate
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+       
+    Next i
+  
+  End Sub
+
+
+Sub RollAll()
+'Calculate Rolling Forecasts Errors for all airports
+'BAA 8/20/2017
+'BAA 10/4/2017
+
+  Application.ScreenUpdating = False
+  Autocalculate = False
+  
+  Dim j As Long
+  Dim k As Integer
+  Dim retain As Long
+  Dim Index_Max_Roll As Long
+
+  Set MainWkbk = ActiveWorkbook
+
+'Clear out data
+    Range("DataCorner_Roll").Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.ClearContents
+
+'Set range of months for forecast
+    Index_Max_Roll = Range("Index_Max_Roll").Value
+    
+'Reset retain
+    retain = 0
+    
+'cycle thru yearmos
+  For j = 1 To Index_Max_Roll
+    Range("Index_Roll") = j
+    Calculate
+         
+     retain = (j - 1) * CLng(51)
+     
+      'cycle thru airports
+      For k = 1 To 51
+      Range("RollAirportNumber") = k
+      Calculate
+      
+      Range("ForecastAirport").Value = Range("RollAirport").Value
+      Range("Forecast").Value = Range("Roll").Value
+      
+      Calculate
+    
+      Range("DataCorner_Roll").Offset(rowOffset:=retain, columnOffset:=0).Value = Range("ActiveCorner_Roll").Value
+                
+        retain = retain + 1
+                
+      Next k
+  Next j
+End Sub
+
+Sub RollActive()
+'Calculate Rolling Forecasts Errors for only the active airport
+'BAA 10/17/2017
+
+  ScreenUpdating = False
+  
+  Dim j As Long
+  Dim retain As Long
+  Dim Index_Max_Roll As Long
+
+  Set MainWkbk = ActiveWorkbook
+
+'Clear out data
+    Range("DataCorner_Roll").Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.ClearContents
+
+'Set range of months for forecast
+    Index_Max_Roll = Range("Index_Max_Roll").Value
+    
+'Reset retain
+    retain = 0
+    
+'cycle thru yearmos
+  For j = 1 To Index_Max_Roll
+    Range("Index_Roll") = j
+    Calculate
+         
+     retain = (j - 1)
+           
+      Range("Forecast").Value = Range("Roll").Value
+      
+      Calculate
+    
+      Range("DataCorner_Roll").Offset(rowOffset:=retain, columnOffset:=0).Value = Range("ActiveCorner_Roll").Value
+                
+        retain = retain + 1
+  Next j
+  
+End Sub
+
+Sub PlusOne()
+'Move the forecast forward by one month
+'BAA 10/7/2017
+
+  Dim YearMo As String
+          
+  Worksheets("Forecast").Activate
+  YearMo = Range("Forecast").Value
+  
+  If Right(YearMo, 2) = 12 Then
+  YearMo = YearMo + 89
+  
+  Else
+  YearMo = YearMo + 1
+            
+  End If
+  
+  Range("Forecast").Value = YearMo
+  Calculate
+
+End Sub
+
+
+Sub MinusOne()
+'Move the forecast backward by one month
+'BAA 10/7/2017
+
+  Dim YearMo As String
+          
+  Worksheets("Forecast").Activate
+  YearMo = Range("Forecast").Value
+  
+  If Right(YearMo, 2) = 1 Then
+  YearMo = YearMo - 89
+  
+  Else
+  YearMo = YearMo - 1
+            
+  End If
+  
+  Range("Forecast").Value = YearMo
+  Calculate
+
+End Sub
