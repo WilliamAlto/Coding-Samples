@@ -1,0 +1,239 @@
+/************************************************************/
+/* Code written by Bill Alto                                */
+/* On 10/1/2012                                             */
+/* NEAS - Validation by Educational Experience              */
+/* VEE Time Series                                          */
+/************************************************************/
+
+%let rawdata=O:\staff\BAlto\05 Baseball Statistics\Data;
+%let exportdir=O:\staff\BAlto\05 Baseball Statistics\Time Series Project\SAS\SASOut;
+
+libname SAS "O:\staff\BAlto\05 Baseball Statistics\Time Series Project\SAS\SASOut";
+
+options obs=max;
+
+* Import from TXT;
+%macro import_txt(filein, fileout, delim);
+  proc import
+    datafile = "&filein."
+    out = &fileout.
+    replace; 
+    delimiter = &delim.;
+    getnames = no;
+    datarow = 1;
+    guessingrows = 10000;
+  run;
+%mend;
+
+* Import from Excel;
+%macro import_xls(filein, fileout, region);
+  proc import
+    out = &fileout.
+    datafile = "&filein."
+    dbms = excel 
+    replace;
+    
+    getnames = YES;
+    range = "&region.";
+    *sheet = "&sheet.";
+  run;
+%mend;
+
+* Export to Excel;
+%macro export_xls(filein, fileout, sheet);
+  proc export 
+    data = &filein.
+    dbms = excel
+    outfile = "&exportdir.\&fileout."
+    replace;
+    
+    sheet = "&sheet.";
+  run;
+%mend;
+
+%import_xls(&rawdata.\SAS Formats.xlsb,sas.StToReg,sasSouth);
+
+%import_txt(&rawdata.\Batting.txt, 			SAS.Batting, 			",");
+%import_txt(&rawdata.\Pitching.txt, 		SAS.Pitching, 			",");
+%import_txt(&rawdata.\Schools.txt, 			SAS.Schools 	(rename=(VAR1=school VAR4=state)), 			",");
+%import_txt(&rawdata.\SchoolsPlayers.txt, 	SAS.SchoolsPlayers, 	",");
+%import_txt(&rawdata.\AllstarFull.txt, 		SAS.AllstarFull, 		",");
+
+* create list of total career allstar appearences;
+proc summary data=sas.Allstarfull (rename=(VAR1=player VAR2=year VAR7=appearances)) nway missing;
+  class player year;
+  var appearances;
+  output out=ASGames (drop=_type_ _freq_) sum=;
+run;
+
+* hash state of school onto player/pitcher;
+data PlayerwState (rename=(VAR1=player));
+  set sas.Schoolsplayers (rename=(VAR2=school));
+  format state $2.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"sas.Schools"); 
+     rc = hh.definekey ('school');
+     rc = hh.definedata ('state');
+     rc = hh.definedone () ;
+  end;
+  rc = hh.find();
+  drop rc:;
+run;
+
+* hash state of school onto stats;
+* 93,955 batting seasons, 30,772 batting seasons with state match;
+data BattingwState;
+  set sas.Batting (rename=(VAR1=player));
+  format state $2.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"playerwstate"); 
+     hh.definekey ('player');
+     hh.definedata ('state');
+     hh.definedone () ;
+  end;
+    if hh.find() = 0;
+run;
+
+* 40,432 pitching seasons, 14,480 pitching seasons with state match;
+data PitchingwState;
+  set sas.Pitching (rename=(VAR1=player));
+  format state $2.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"playerwstate"); 
+     hh.definekey ('player');
+     hh.definedata ('state');
+     hh.definedone () ;
+  end;
+    if hh.find() = 0;
+run;
+
+* hash south region flag onto player/pitcher;
+data BattingwFlag;
+  set BattingwState
+  (rename=( 
+  		 VAR2=year
+		 VAR6=G 
+		 VAR7=G_batting 
+		 VAR8=AB 
+		 VAR9=R 
+		 VAR10=H 
+		 VAR11=_2B 
+		 VAR12=_3B 
+		 VAR13=HR 
+		 VAR14=RBI 
+		 VAR15=SB 
+		 VAR16=CS 
+		 VAR17=BB 
+		 VAR18=SO 
+		 VAR19=IBB 
+		 VAR20=HBP 
+		 VAR21=SH 
+		 VAR22=SF 
+		 VAR23=GIDP 
+		 ));
+  format flag BEST12.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"sas.Sttoreg"); 
+     rc = hh.definekey ('state');
+     rc = hh.definedata ('flag');
+     rc = hh.definedone () ;
+  end;
+  rc = hh.find();
+  drop rc:;
+ 
+	 abpg=AB/G;
+
+run;
+
+data PitchingwFlag;
+  set PitchingwState
+  (rename=( 
+  		 VAR2=year
+		 VAR6=W 
+		 VAR7=L 
+		 VAR8=G 
+		 VAR9=GS 
+		 VAR10=CG 
+		 VAR11=SHO 
+		 VAR12=SV 
+		 VAR13=IPouts 
+		 VAR14=H 
+		 VAR15=ER 
+		 VAR16=HR 
+		 VAR17=BB 
+		 VAR18=SO 
+		 VAR19=BAOpp 
+		 VAR20=ERA 
+		 VAR21=IBB 
+		 VAR22=WP 
+		 VAR23=HBP 
+		 VAR24=BK 
+		 VAR25=BFP 
+		 VAR26=GF 
+		 VAR27=R 		 
+		 ));
+  format flag BEST12.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"sas.Sttoreg"); 
+     rc = hh.definekey ('state');
+     rc = hh.definedata ('flag');
+     rc = hh.definedone () ;
+  end;
+  rc = hh.find();
+  drop rc:;
+ 
+	 ippg=IPouts/G;
+
+run;
+
+* hash AS flag onto player/pitcher;
+data BatwFlagAS;
+  set BattingwFlag;
+  format appearances BEST12.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"ASGames"); 
+     rc = hh.definekey ('player', 'year');
+     rc = hh.definedata ('appearances');
+     rc = hh.definedone () ;
+  end;
+  rc = hh.find();
+  drop rc:;
+run;
+
+data PitwFlagAS;
+  set Pitchingwflag;
+  format appearances BEST12.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"ASGames"); 
+     rc = hh.definekey ('player', 'year');
+     rc = hh.definedata ('appearances');
+     rc = hh.definedone () ;
+  end;
+  rc = hh.find();
+  drop rc:;
+run;
+
+* turn into rate stats and remove pitchers (abpg<1);
+data BatClean (keep= year flag appearances);
+  set BatwFlagAS (where=(abpg ge 1));
+run;
+
+data PitClean (keep= year flag appearances);
+  set PitwFlagAS (where=(ippg ge .1));
+run;
+
+* create by year summary stats;
+proc summary data=BatClean nway missing;
+  class year flag ;
+  var appearances;
+  output out=sas.BattingSummary (drop=_type_ rename=(_freq_=Seasons appearances=ASgames)) sum=;
+run;
+
+proc summary data=PitClean nway missing;
+  class year flag;
+  var appearances;
+  output out=sas.PitchingSummary (drop=_type_ rename=(_freq_=Seasons appearances=ASgames)) sum=;
+run;
+
+%export_xls(sas.BattingSummary, SAS Summaries.xlsb, Batting);
+%export_xls(sas.PitchingSummary, SAS Summaries.xlsb, Pitching);
