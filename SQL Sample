@@ -1,0 +1,119 @@
+/* 
+CREATE TABLES 
+if necessary first drop tables
+
+*/
+
+--DROP TABLE tblCustomer;
+--DROP TABLE tblCustomerVisit;
+
+CREATE TABLE tblCustomer (CustNo int, Name varchar(255));
+INSERT INTO tblCustomer (CustNo, Name)
+VALUES (101, "John");
+INSERT INTO tblCustomer (CustNo, Name)
+VALUES (102, "Sam");
+INSERT INTO tblCustomer (CustNo, Name)
+VALUES (103, "Li");
+INSERT INTO tblCustomer (CustNo, Name)
+VALUES (104, "Sami");
+INSERT INTO tblCustomer (CustNo, Name)
+VALUES (105, "Raj");
+INSERT INTO tblCustomer (CustNo, Name)
+VALUES (106, "Tarra");
+INSERT INTO tblCustomer (CustNo, Name)
+VALUES (107, "Joao");
+
+SELECT * FROM tblCustomer;
+
+CREATE TABLE tblCustomerVisit (CustNo int, VisitDate date, VisitedCity varchar(255));
+INSERT INTO tblCustomerVisit (CustNo, VisitDate, VisitedCity)
+VALUES (101, '2017-01-01', "Redmond");
+INSERT INTO tblCustomerVisit (CustNo, VisitDate, VisitedCity)
+VALUES (101, '2016-01-05', "Bellevue");
+INSERT INTO tblCustomerVisit (CustNo, VisitDate, VisitedCity)
+VALUES (101, '2016-01-03', "Kirkland");
+INSERT INTO tblCustomerVisit (CustNo, VisitDate, VisitedCity)
+VALUES (102, '2016-01-01', "Redmond");
+INSERT INTO tblCustomerVisit (CustNo, VisitDate, VisitedCity)
+VALUES (102, '2016-01-05', "Bellevue");
+INSERT INTO tblCustomerVisit (CustNo, VisitDate, VisitedCity)
+VALUES (102, '2016-01-03', "Redmond");
+INSERT INTO tblCustomerVisit (CustNo, VisitDate, VisitedCity)
+VALUES (102, '2016-01-01', "Bellevue");
+INSERT INTO tblCustomerVisit (CustNo, VisitDate, VisitedCity)
+VALUES (103, '2017-01-01', "Redmond");
+INSERT INTO tblCustomerVisit (CustNo, VisitDate, VisitedCity)
+VALUES (104, '2017-01-01', "Bellevue");
+INSERT INTO tblCustomerVisit (CustNo, VisitDate, VisitedCity)
+VALUES (105, '2017-01-01', "Issaquah");
+
+SELECT * FROM tblCustomerVisit;
+
+/* 
+Q1 
+"get CustNo, LastCityVisited"
+*/
+SELECT * FROM tblCustomerVisit
+  GROUP BY CustNo HAVING VisitDate = max(VisitDate);
+
+/* 
+Q2 
+"get CustNo, City where user visited more than once"
+*/
+SELECT CustNo, VisitedCity, COUNT(VisitedCity) FROM tblCustomerVisit
+  GROUP BY CustNo, VisitedCity HAVING COUNT(VisitedCity) > 1;
+  
+/* Q3 
+"get CustNo, VisitDate, aNumberOfDaysFromFirstVisit"
+
+NOTE CAN'T CHECK AS DATEDIFF NOT SUPPORTED!
+*/
+CREATE TABLE tblFirstVisit (CustNo int, FirstVisitDate date);
+  INSERT INTO tblFirstVisit (CustNo, FirstVisitDate)
+    SELECT CustNo, MIN(VisitDate) AS FirstVisitDate FROM tblCustomerVisit  GROUP BY CustNo;
+
+
+CREATE TABLE Q3 (CustNo int, VisitDate date, VisitedCity varchar(255), FirstVisitDate date);
+  INSERT INTO Q3 (CustNo, VisitDate, VisitedCity, FirstVisitDate)
+    SELECT tblCustomerVisit.CustNo, tblCustomerVisit.VisitDate, tblCustomerVisit.VisitedCity, tblFirstVisit.FirstVisitDate FROM tblCustomerVisit 
+    LEFT JOIN tblFirstVisit ON tblFirstVisit.CustNo = tblCustomerVisit.CustNo;
+
+SELECT * FROM Q3;
+
+-- final step will error as DATEDIFF is not supported 
+-- SELECT CustNo, VisitDate, VisitedCity, DATEDIFF(day, VisitDate, FirstVisitDate) AS NumberOfDaysFromFirstVisit FROM Q3;
+
+/* 
+Q4 
+"get CustNo, Name, VisitedCityCount" with VisitedCityCount = 0 if customer has not visited any city
+*/
+CREATE TABLE Q4 (CustNo int, Name varchar(255), VisitedCityCount int);
+INSERT INTO Q4 (CustNo, Name, VisitedCityCount)
+  SELECT tblCustomer.CustNo AS CustNo, tblCustomer.Name AS Name, COUNT(DISTINCT tblCustomerVisit.VisitedCity) AS VisitedCityCount FROM tblCustomerVisit 
+  LEFT JOIN tblCustomer ON tblCustomer.CustNo = tblCustomerVisit.CustNo
+    GROUP BY tblCustomer.CustNo;  
+    
+INSERT INTO Q4 (CustNo, Name, VisitedCityCount)
+  SELECT CustNo, Name, 0 FROM tblCustomer WHERE CustNo NOT IN (
+  SELECT tblCustomer.CustNo FROM tblCustomerVisit 
+    LEFT JOIN tblCustomer ON tblCustomer.CustNo = tblCustomerVisit.CustNo);  
+
+SELECT * FROM Q4;
+  
+/* 
+Q5 
+"summary of users by # unique cities visited"
+*/
+CREATE TABLE Q5 (NumberOfCityVisited int, NumberOfUsers int);
+INSERT INTO Q5 (NumberOfCityVisited, NumberOfUsers)
+SELECT COUNT(DISTINCT VisitedCity) AS NumberOfCityVisited, COUNT(DISTINCT CustNo) AS NumberOfUsers FROM tblCustomerVisit 
+  GROUP BY CustNo;
+
+SELECT NumberOfCityVisited, SUM(NumberOfUsers) FROM Q5
+  GROUP BY NumberOfCityVisited;
+
+/* 
+Q6 
+"delete users who have visited more than two unique cities"
+*/
+SELECT CustNo, Name FROM Q4 WHERE VisitedCityCount < 2;
