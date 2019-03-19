@@ -237,3 +237,275 @@ run;
 
 %export_xls(sas.BattingSummary, SAS Summaries.xlsb, Batting);
 %export_xls(sas.PitchingSummary, SAS Summaries.xlsb, Pitching);
+
+/************************************************************/
+/* Code written by Bill Alto                                */
+/* On 7/11/2012                                             */
+/* Client: NEAS                                             */
+/* Client Code: 600011STD01 01                              */
+/************************************************************/
+
+%let rawdata =O:\staff\BAlto\05 Baseball Statistics\Data;
+libname SAS "O:\staff\BAlto\05 Baseball Statistics\SAS\SASOut";
+
+options obs=max;
+
+* Import from TXT;
+%macro import_txt(filein, fileout, delim);
+  proc import
+    datafile = "&filein."
+    out = &fileout.
+    replace; 
+    delimiter = &delim.;
+    getnames = no;
+    datarow = 1;
+    guessingrows = 10000;
+  run;
+%mend;
+
+* Import from Excel;
+%macro import_xls(filein, fileout, region);
+  proc import
+    out = &fileout.
+    datafile = "&filein."
+    dbms = excel 
+    replace;
+    
+    getnames = YES;
+    range = "&region.";
+    *sheet = "&sheet.";
+  run;
+%mend;
+
+%import_xls(&rawdata.\SAS Formats.xlsb,sas.StToReg,sasSouth);
+
+%import_txt(&rawdata.\Batting.txt, 			SAS.Batting, 			",");
+%import_txt(&rawdata.\Pitching.txt, 		SAS.Pitching, 			",");
+%import_txt(&rawdata.\Schools.txt, 			SAS.Schools 	(rename=(VAR1=school VAR4=state)), 			",");
+%import_txt(&rawdata.\SchoolsPlayers.txt, 	SAS.SchoolsPlayers, 	",");
+%import_txt(&rawdata.\AllstarFull.txt, 		SAS.AllstarFull, 		",");
+
+* create list of total career allstar appearences;
+proc summary data=sas.Allstarfull (rename=(VAR1=player VAR7=appearances)) nway missing;
+  class player;
+  var appearances;
+  output out=ASGames (drop=_type_ _freq_) sum=;
+run;
+
+* hash state of school onto player/pitcher;
+data PlayerwState (rename=(VAR1=player));
+  set sas.Schoolsplayers (rename=(VAR2=school));
+  format state $2.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"sas.Schools"); 
+     rc = hh.definekey ('school');
+     rc = hh.definedata ('state');
+     rc = hh.definedone () ;
+  end;
+  rc = hh.find();
+  drop rc:;
+run;
+
+* hash state of school onto stats;
+* 93,955 batting seasons, 30,772 batting seasons with state match;
+data BattingwState;
+  set sas.Batting (rename=(VAR1=player));
+  format state $2.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"playerwstate"); 
+     hh.definekey ('player');
+     hh.definedata ('state');
+     hh.definedone () ;
+  end;
+    if hh.find() = 0;
+run;
+* 40,432 ptiching seasons, 14,480 ptiching seasons with state match;
+data PitchingwState;
+  set sas.Pitching (rename=(VAR1=player));
+  format state $2.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"playerwstate"); 
+     hh.definekey ('player');
+     hh.definedata ('state');
+     hh.definedone () ;
+  end;
+    if hh.find() = 0;
+run;
+
+* create career stats;
+proc summary data=BattingwState nway missing;
+  class player state;
+  var VAR6--VAR24;
+  output out=CarBatwState (drop=_type_ _freq_) sum=;
+run;
+
+proc summary data=PitchingwState nway missing;
+  class player state;
+  var VAR6--VAR27;
+  output out=CarPitwState (drop=_type_ _freq_) sum=;
+run;
+
+
+* hash on career AS appearences;
+data CarBatwStwAS;
+  set CarBatwState;
+  format appearances best12.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"Asgames"); 
+     rc = hh.definekey ('player');
+     rc = hh.definedata ('appearances');
+     rc = hh.definedone () ;
+  end;
+  rc = hh.find();
+  drop rc:;
+run;
+
+data CarPitwStwAS;
+  set CarPitwState;
+  format appearances best12.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"Asgames"); 
+     rc = hh.definekey ('player');
+     rc = hh.definedata ('appearances');
+     rc = hh.definedone () ;
+  end;
+  rc = hh.find();
+  drop rc:;
+run;
+
+data CarBatwStwAS;
+  set CarBatwStwAS;
+  if appearances="." then appearances=0;
+run;
+
+data CarPitwStwAS;
+  set CarPitwStwAS;
+  if appearances="." then appearances=0;
+run;
+
+* south region flag;
+data CarBatwFlagwAS;
+  set CarBatwStwAS
+  (rename=( 
+		 VAR6=G 
+		 VAR7=G_batting 
+		 VAR8=AB 
+		 VAR9=R 
+		 VAR10=H 
+		 VAR11=_2B 
+		 VAR12=_3B 
+		 VAR13=HR 
+		 VAR14=RBI 
+		 VAR15=SB 
+		 VAR16=CS 
+		 VAR17=BB 
+		 VAR18=SO 
+		 VAR19=IBB 
+		 VAR20=HBP 
+		 VAR21=SH 
+		 VAR22=SF 
+		 VAR23=GIDP 
+		 ));
+  format flag BEST12.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"sas.Sttoreg"); 
+     rc = hh.definekey ('state');
+     rc = hh.definedata ('flag');
+     rc = hh.definedone () ;
+  end;
+  rc = hh.find();
+  drop rc:;
+ 
+	 abpg=AB/G;
+
+run;
+
+data CarPitwFlagwAS;
+  set CarPitwStwAS
+  (rename=( 
+		 VAR6=W 
+		 VAR7=L 
+		 VAR8=G 
+		 VAR9=GS 
+		 VAR10=CG 
+		 VAR11=SHO 
+		 VAR12=SV 
+		 VAR13=IPouts 
+		 VAR14=H 
+		 VAR15=ER 
+		 VAR16=HR 
+		 VAR17=BB 
+		 VAR18=SO 
+		 VAR19=BAOpp 
+		 VAR20=ERA 
+		 VAR21=IBB 
+		 VAR22=WP 
+		 VAR23=HBP 
+		 VAR24=BK 
+		 VAR25=BFP 
+		 VAR26=GF 
+		 VAR27=R 		 
+		 ));
+  format flag BEST12.;
+  if _n_ eq 1 then do;
+     declare hash hh (dataset:"sas.Sttoreg"); 
+     rc = hh.definekey ('state');
+     rc = hh.definedata ('flag');
+     rc = hh.definedone () ;
+  end;
+  rc = hh.find();
+  drop rc:;
+ 
+	 ippg=IPouts/G;
+
+run;
+
+* turn into rate stats and remove pitchers (abpg<1);
+data sas.Batrate (keep= appearances HR SB BB SO flag);
+  format abpg best12.;
+  set CarBatwFlagwAS (where=(abpg ge 1));
+	 HR=HR/AB; 
+	 SB=SB/AB; 
+	 BB=BB/AB; 
+	 SO=SO/AB; 
+run;
+
+data sas.Pitrate (keep= appearances HR BB SO R flag);
+  format ippg best12.;
+  set CarPitwFlagwAS (where=(ippg ge .1));
+		 HR=HR/IPouts; 
+		 BB=BB/IPouts; 
+		 SO=SO/IPouts; 
+		 R=R/IPouts; 
+run;
+
+* regression analysis;
+proc reg  data = sas.Batrate;
+  model appearances= HR 
+					 SB 
+					 BB 
+					 SO
+					 flag 
+					 ;
+run;
+
+proc reg  data = sas.Pitrate;
+  model appearances= HR 
+					 BB 
+					 SO 
+					 R 
+					 flag
+					;
+run;
+
+proc glm data = sas.Batrate;
+  class flag;
+  model appearances = flag;
+run; quit;
+
+proc glm data = sas.Pitrate;
+  class flag;
+  model appearances = flag;
+run; quit;
+
+* "C:\Users\willi\Downloads\VEE Time Series.sas"
