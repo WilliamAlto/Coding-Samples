@@ -1,7 +1,6 @@
 Sub HarvestDOT()
 'Harvest DOT Data
-'BAA 7/26/2016
-'BAA 8/31/2016 edited to cycle through interesting airports
+'BAA
 
   Application.ScreenUpdating = False
   
@@ -334,3 +333,5 @@ Sub MinusOne()
   Calculate
 
 End Sub
+
+' C:\Users\willi\Documents\_US Airports\DOT Summary Tool 20190308.xlsb
