@@ -1,6 +1,5 @@
 /************************************************************/
 /* Code written by Bill Alto                                */
-/* On 10/1/2012                                             */
 /* NEAS - Validation by Educational Experience              */
 /* VEE Time Series                                          */
 /************************************************************/
@@ -240,7 +239,6 @@ run;
 
 /************************************************************/
 /* Code written by Bill Alto                                */
-/* On 7/11/2012                                             */
 /* Client: NEAS                                             */
 /* Client Code: Regression Analysis                         */
 /************************************************************/
@@ -508,4 +506,4 @@ proc glm data = sas.Pitrate;
   model appearances = flag;
 run; quit;
 
-* "C:\Users\willi\Downloads\VEE Time Series.sas"
+* C:\Users\willi\Downloads\VEE Time Series.sas
