@@ -1,3 +1,3 @@
 # Coding-Samples
 
-All code written by William Alto
+All code samples written by William Alto
