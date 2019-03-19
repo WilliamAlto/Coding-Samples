@@ -242,7 +242,7 @@ run;
 /* Code written by Bill Alto                                */
 /* On 7/11/2012                                             */
 /* Client: NEAS                                             */
-/* Client Code: 600011STD01 01                              */
+/* Client Code: Regression Analysis                         */
 /************************************************************/
 
 %let rawdata =O:\staff\BAlto\05 Baseball Statistics\Data;
