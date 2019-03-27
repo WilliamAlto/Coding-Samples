@@ -1,3 +1,8 @@
+/*
+Code by BAA
+C:\Users\willi\Desktop\SQL Problems.txt
+*/
+
 /* 
 CREATE TABLES 
 if necessary first drop tables
@@ -117,8 +122,3 @@ Q6
 "delete users who have visited more than two unique cities"
 */
 SELECT CustNo, Name FROM Q4 WHERE VisitedCityCount < 2;
-
-/*
-C:\Users\willi\Desktop\SQL Problems.txt
-*/
-
