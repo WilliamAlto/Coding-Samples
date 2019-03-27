@@ -1,5 +1,5 @@
 ' C:\Users\willi\Documents\_US Airports\DOT Summary Tool 20190327.xlsb
-' Code Written by Bill Alto
+' Sample code written by Bill Alto
 
 Sub HarvestDOT()
 'Harvest DOT Data
