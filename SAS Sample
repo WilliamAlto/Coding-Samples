@@ -1,9 +1,6 @@
-* C:\Users\willi\Downloads\VEE Time Series.sas
-
 /************************************************************/
-/* Code written by Bill Alto                                */
-/* NEAS - Validation by Educational Experience              */
-/* Regression Analysis                                      */
+/* Sample code written by Bill Alto                         */
+/*  C:\Users\willi\Downloads\VEE Time Series.sas            */
 /************************************************************/
 
 %let rawdata =O:\staff\BAlto\05 Baseball Statistics\Data;
