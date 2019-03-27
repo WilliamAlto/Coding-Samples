@@ -1,6 +1,8 @@
+' C:\Users\willi\Documents\_US Airports\DOT Summary Tool 20190327.xlsb
+' Code Written by Bill Alto
+
 Sub HarvestDOT()
 'Harvest DOT Data
-'BAA
 
   Application.ScreenUpdating = False
   
@@ -333,5 +335,3 @@ Sub MinusOne()
   Calculate
 
 End Sub
-
-' C:\Users\willi\Documents\_US Airports\DOT Summary Tool 20190308.xlsb
