@@ -1,7 +1,9 @@
+* C:\Users\willi\Downloads\VEE Time Series.sas
+
 /************************************************************/
 /* Code written by Bill Alto                                */
 /* NEAS - Validation by Educational Experience              */
-/* Client Code: Regression Analysis                         */
+/* Regression Analysis                                      */
 /************************************************************/
 
 %let rawdata =O:\staff\BAlto\05 Baseball Statistics\Data;
@@ -266,5 +268,3 @@ proc glm data = sas.Pitrate;
   class flag;
   model appearances = flag;
 run; quit;
-
-* C:\Users\willi\Downloads\VEE Time Series.sas
