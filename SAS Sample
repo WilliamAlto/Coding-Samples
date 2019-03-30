@@ -1,6 +1,5 @@
 /************************************************************/
 /* Sample code written by Bill Alto                         */
-/*  C:\Users\willi\Downloads\VEE Time Series.sas            */
 /************************************************************/
 
 %let rawdata =O:\staff\BAlto\05 Baseball Statistics\Data;
@@ -37,11 +36,11 @@ options obs=max;
 
 %import_xls(&rawdata.\SAS Formats.xlsb,sas.StToReg,sasSouth);
 
-%import_txt(&rawdata.\Batting.txt, 			SAS.Batting, 			",");
-%import_txt(&rawdata.\Pitching.txt, 		SAS.Pitching, 			",");
-%import_txt(&rawdata.\Schools.txt, 			SAS.Schools 	(rename=(VAR1=school VAR4=state)), 			",");
-%import_txt(&rawdata.\SchoolsPlayers.txt, 	SAS.SchoolsPlayers, 	",");
-%import_txt(&rawdata.\AllstarFull.txt, 		SAS.AllstarFull, 		",");
+%import_txt(&rawdata.\Batting.txt, SAS.Batting, ",");
+%import_txt(&rawdata.\Pitching.txt, SAS.Pitching, ",");
+%import_txt(&rawdata.\Schools.txt, SAS.Schools (rename=(VAR1=school VAR4=state)), ",");
+%import_txt(&rawdata.\SchoolsPlayers.txt, SAS.SchoolsPlayers, ",");
+%import_txt(&rawdata.\AllstarFull.txt, SAS.AllstarFull, ",");
 
 * create list of total career allstar appearences;
 proc summary data=sas.Allstarfull (rename=(VAR1=player VAR7=appearances)) nway missing;
@@ -102,7 +101,6 @@ proc summary data=PitchingwState nway missing;
   var VAR6--VAR27;
   output out=CarPitwState (drop=_type_ _freq_) sum=;
 run;
-
 
 * hash on career AS appearences;
 data CarBatwStwAS;
@@ -240,20 +238,20 @@ run;
 * regression analysis;
 proc reg  data = sas.Batrate;
   model appearances= HR 
-					 SB 
-					 BB 
-					 SO
-					 flag 
-					 ;
+		 SB 
+		 BB 
+		 SO
+		 flag 
+		;
 run;
 
 proc reg  data = sas.Pitrate;
   model appearances= HR 
-					 BB 
-					 SO 
-					 R 
-					 flag
-					;
+		 BB 
+		 SO 
+		 R 
+		 flag
+		;
 run;
 
 proc glm data = sas.Batrate;
