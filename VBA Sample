@@ -1,4 +1,3 @@
-' C:\Users\willi\Documents\_US Airports\DOT Summary Tool 20190327.xlsb
 ' Sample code written by Bill Alto
 
 Sub HarvestDOT()
@@ -64,8 +63,9 @@ End Sub
 
 Sub HarvestDOTActive()
 'Harvest DOT Data for only the active airport
-'BAA 10/22/2017
-  Application.ScreenUpdating = False
+'BAA
+
+Application.ScreenUpdating = False
   
   Dim j As Integer
   Dim retain As Long
@@ -118,9 +118,8 @@ End Sub
 
 Sub AirportCycle()
 'Cycle through airports and copy exhibit
-'BAA 9/8/2016
-
-  ScreenUpdating = False
+'BAA
+ScreenUpdating = False
   Autocalculate = False
 
   Dim i As Integer
@@ -155,8 +154,7 @@ End Sub
 
 Sub CycleForecasts()
 'Copy Forecast for a list of given airport at a given date
-'BAA 8/16/2017
-'BAA 10/4/2017
+'BAA
 
   ScreenUpdating = False
   Autocalculate = True
@@ -201,8 +199,7 @@ Sub CycleForecasts()
 
 Sub RollAll()
 'Calculate Rolling Forecasts Errors for all airports
-'BAA 8/20/2017
-'BAA 10/4/2017
+'BAA 
 
   Application.ScreenUpdating = False
   Autocalculate = False
@@ -252,7 +249,7 @@ End Sub
 
 Sub RollActive()
 'Calculate Rolling Forecasts Errors for only the active airport
-'BAA 10/17/2017
+'BAA
 
   ScreenUpdating = False
   
@@ -293,7 +290,7 @@ End Sub
 
 Sub PlusOne()
 'Move the forecast forward by one month
-'BAA 10/7/2017
+'BAA
 
   Dim YearMo As String
           
@@ -305,29 +302,6 @@ Sub PlusOne()
   
   Else
   YearMo = YearMo + 1
-            
-  End If
-  
-  Range("Forecast").Value = YearMo
-  Calculate
-
-End Sub
-
-
-Sub MinusOne()
-'Move the forecast backward by one month
-'BAA 10/7/2017
-
-  Dim YearMo As String
-          
-  Worksheets("Forecast").Activate
-  YearMo = Range("Forecast").Value
-  
-  If Right(YearMo, 2) = 1 Then
-  YearMo = YearMo - 89
-  
-  Else
-  YearMo = YearMo - 1
             
   End If
   
