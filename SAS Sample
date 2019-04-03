@@ -2,8 +2,8 @@
 /* Sample code written by Bill Alto                         */
 /************************************************************/
 
-%let rawdata =O:\staff\BAlto\05 Baseball Statistics\Data;
-libname SAS "O:\staff\BAlto\05 Baseball Statistics\SAS\SASOut";
+%let rawdata =X:\X\05 Baseball Statistics\Data;
+libname SAS "X:\X\05 Baseball Statistics\SAS\SASOut";
 
 options obs=max;
 
@@ -76,6 +76,7 @@ data BattingwState;
   end;
     if hh.find() = 0;
 run;
+
 * 40,432 ptiching seasons, 14,480 ptiching seasons with state match;
 data PitchingwState;
   set sas.Pitching (rename=(VAR1=player));
@@ -127,16 +128,6 @@ data CarPitwStwAS;
   end;
   rc = hh.find();
   drop rc:;
-run;
-
-data CarBatwStwAS;
-  set CarBatwStwAS;
-  if appearances="." then appearances=0;
-run;
-
-data CarPitwStwAS;
-  set CarPitwStwAS;
-  if appearances="." then appearances=0;
 run;
 
 * south region flag;
